@@ -1,17 +1,18 @@
 const axios = require('axios')
 
-const getExchangeRate = (from,to) => {
-  return axios.get(`http://api.fixer.io/latest?base=${from}`).then((response) => {
-    return response.data.rates[to]
-  })
+const getExchangeRate = async (from,to) => {
+  const response = await axios.get(`http://api.fixer.io/latest?base=${from}`)
+  return response.data.rates[to]
 }
 
-const getCountries = (currencyCode) => {
-    return axios.get(`https://restcountries.eu/rest/v2/currency/${currencyCode}`).then((response) => {
-        return response.data.map((country) => {
-            return country.name 
-        })
-    })
+const getCountries = async (currencyCode) => {
+    try {
+        const response = await axios.get(`https://restcountries.eu/rest/v2/currency/${currencyCode}`)
+        return response.data.map(country => {return country.name })   
+    } catch(e) {
+        throw new Error(`Unable to get countries for currency ${currencyCode}`)
+    }
+    
 }
 
 const convertCurrency = (from,to,amount) => {
@@ -21,17 +22,27 @@ const convertCurrency = (from,to,amount) => {
       return getExchangeRate(from,to)
   }).then((rate) => {
       const exchangedAmount = amount * rate
+    //   console.log('lwl')
       return `${amount} ${from} is worth ${exchangedAmount} ${to}. Can be used in the following countries: ${countries.join(', ')}`
   })
 }
 
-convertCurrency('AUD','ZAR',10).then((result) => console.log(result))
+const convertCurrencyAlt = async (from,to,amount) => {
+    const countries = await getCountries(to)
+    const rate = await getExchangeRate(from,to)
+    const exchangedAmount = amount * rate
+    return `${amount} ${from} is worth ${exchangedAmount} ${to}. ${to} can be used in the following countries: ${countries.join(', ')}`    
+}
 
-getCountries('ZAR').then((countries) => {
-    console.log(countries)}
-)
+convertCurrencyAlt('AUD','ZAR',10)
+    .then((result) => console.log(result))
+    .catch(e => console.log(e))
 
-getExchangeRate('AUD','ZAR').then((rate) => {
-    console.log(rate)}
-)
+// getCountries('ZAR').then((countries) => {
+//     console.log(countries)}
+// )
+
+// getExchangeRate('AUD','ZAR').then((rate) => {
+//     console.log(rate)}
+// )
 
